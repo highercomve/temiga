@@ -51,68 +51,56 @@ var TodoItem = Temiga.CreateElement({
       </div>
     `
   },
-  events: [
-    {
-      type: 'change',
-      selector: '.toggle-task',
-      cb (evnt) {
-        evnt.preventDefault()
-        const taskId = event.target.parentElement.id
-        store.dispatch({
-          type: 'TASK_TOGGLE',
-          payload: taskId
-        })
-      }
+  events: {
+    'change .toggle-task': function (evnt) {
+      evnt.preventDefault()
+      const taskId = event.target.parentElement.id
+      store.dispatch({
+        type: 'TASK_TOGGLE',
+        payload: taskId
+      })
     },
-    {
-      type: 'click',
-      selector: '.delete-task',
-      cb (evnt) {
-        evnt.preventDefault()
-        const taskId = event.target.parentElement.id
-        store.dispatch({
-          type: 'TASK_REMOVE',
-          payload: taskId
-        })
-      }
+    'click .delete-task': function (evnt) {
+      evnt.preventDefault()
+      const taskId = event.target.parentElement.id
+      store.dispatch({
+        type: 'TASK_REMOVE',
+        payload: taskId
+      })
     }
-  ]
+  }
 })
 
 var TodoForm = Temiga.CreateElement({
   name: 'todo-form',
   render () {
     return `
-      <form>
+      <form id="new-todo">
         <input name="todo" id="add-todo" placeholder="Create a new todo">
         <button type="submit">Add new Task</button>
       </form>
     `
   },
-  events: [
-    {
-      type: 'submit',
-      selector: 'form',
-      cb (evnt) {
-        evnt.preventDefault()
-        var value = event.target[0].value.trim()
-        if (value && value !==  '') {
-          store.dispatch({
-            type: 'TASK_ADD',
-            payload: {
-              text: value,
-              done: false
-            }
-          })
-        } else {
-          store.dispatch({
-            type: 'INPUT_CANT_BE_EMPTY',
-          })
-        }
-        event.target[0].value = ''
+  events: {
+    'submit #new-todo': function (evnt) {
+      evnt.preventDefault()
+      var value = event.target[0].value.trim()
+      if (value && value !==  '') {
+        store.dispatch({
+          type: 'TASK_ADD',
+          payload: {
+            text: value,
+            done: false
+          }
+        })
+      } else {
+        store.dispatch({
+          type: 'INPUT_CANT_BE_EMPTY',
+        })
       }
+      event.target[0].value = ''
     }
-  ]
+  }
 })
 
 document.addEventListener('DOMContentLoaded', (event) => {

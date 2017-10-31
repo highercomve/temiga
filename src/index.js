@@ -49,6 +49,7 @@ function clone (obj, list = [], include = true) {
   }, {})
 }
 
+
 function update () {
   if (this.shouldUpdate) {
     return this.render.apply(this, arguments)
@@ -61,12 +62,14 @@ export function CreateElement (builder = isRequired('You need to pass and object
   validate(builder, ['name'])
 
   const element = CreateTag(builder)
-  const eventList = builder.events || []
-  eventList.forEach((eventListener) => {
-    validate(eventListener, ['type', 'selector', {name: 'cb', typeOf: 'function'}])
-    setEventListener(eventListener.type, eventListener.selector, eventListener.cb)
+  const eventList = Object.keys(builder.events || {})
+  eventList.forEach((key) => {
+    const listeners = key.split(',')
+    listeners.forEach((listener) => {
+      const [type, selector] = listener.split(' ')
+      setEventListener(type, selector, builder.events[key])
+    })
   })
-
   return element
 }
 

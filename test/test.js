@@ -213,6 +213,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 exports.CreateElement = CreateElement;
@@ -306,12 +308,18 @@ function CreateElement() {
   validate(builder, ['name']);
 
   var element = CreateTag(builder);
-  var eventList = builder.events || [];
-  eventList.forEach(function (eventListener) {
-    validate(eventListener, ['type', 'selector', { name: 'cb', typeOf: 'function' }]);
-    setEventListener(eventListener.type, eventListener.selector, eventListener.cb);
-  });
+  var eventList = Object.keys(builder.events || {});
+  eventList.forEach(function (key) {
+    var listeners = key.split(',');
+    listeners.forEach(function (listener) {
+      var _listener$split = listener.split(' '),
+          _listener$split2 = _slicedToArray(_listener$split, 2),
+          type = _listener$split2[0],
+          selector = _listener$split2[1];
 
+      setEventListener(type, selector, builder.events[key]);
+    });
+  });
   return element;
 }
 
@@ -417,21 +425,16 @@ var TodoItem = Temiga.CreateElement({
     return '\n      <div class="item" id="' + this.getAttribute('key') + '">\n        <input \n          type="checkbox" \n          ' + (this.getAttribute('done') === 'true' ? 'checked' : '') + ' \n          class="toggle-task"\n          name="task-' + this.getAttribute('key') + '" \n          id="task-' + this.getAttribute('key') + '">\n        <label for="task-' + this.getAttribute('key') + '">' + this.getAttribute('text') + '</label>\n        <button class="delete-task" data-id="' + this.getAttribute('key') + '">Delete</button>\n        <hr/>\n      </div>\n    ';
   },
 
-  events: [{
-    type: 'change',
-    selector: '.toggle-task',
-    cb: function cb(evnt) {
+  events: {
+    'change .toggle-task': function changeToggleTask(evnt) {
       evnt.preventDefault();
       var taskId = event.target.parentElement.id;
       _index3.default.dispatch({
         type: 'TASK_TOGGLE',
         payload: taskId
       });
-    }
-  }, {
-    type: 'click',
-    selector: '.delete-task',
-    cb: function cb(evnt) {
+    },
+    'click .delete-task': function clickDeleteTask(evnt) {
       evnt.preventDefault();
       var taskId = event.target.parentElement.id;
       _index3.default.dispatch({
@@ -439,19 +442,17 @@ var TodoItem = Temiga.CreateElement({
         payload: taskId
       });
     }
-  }]
+  }
 });
 
 var TodoForm = Temiga.CreateElement({
   name: 'todo-form',
   render: function render() {
-    return '\n      <form>\n        <input name="todo" id="add-todo" placeholder="Create a new todo">\n        <button type="submit">Add new Task</button>\n      </form>\n    ';
+    return '\n      <form id="new-todo">\n        <input name="todo" id="add-todo" placeholder="Create a new todo">\n        <button type="submit">Add new Task</button>\n      </form>\n    ';
   },
 
-  events: [{
-    type: 'submit',
-    selector: 'form',
-    cb: function cb(evnt) {
+  events: {
+    'submit #new-todo': function submitNewTodo(evnt) {
       evnt.preventDefault();
       var value = event.target[0].value.trim();
       if (value && value !== '') {
@@ -469,7 +470,7 @@ var TodoForm = Temiga.CreateElement({
       }
       event.target[0].value = '';
     }
-  }]
+  }
 });
 
 document.addEventListener('DOMContentLoaded', function (event) {
