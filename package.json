@@ -1,0 +1,49 @@
+{
+  "name": "temiga",
+  "version": "0.0.1",
+  "description": "This is a JS framework that only use plain JS and replace views with innerHTML",
+  "main": "index.js",
+  "repository": "https://github.com/highercomve/temiga",
+  "author": "Sergio Marin",
+  "license": "MIT",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "build": "babel src -d lib",
+    "watch": "babel -w src -d lib",
+    "prebuild-browser": "npm run build",
+    "build-browser": "browserify src/index.js --standalone Temiga | uglifyjs -c > ./lib/temiga.min.js",
+    "watch-browser": "watchify src/index.js -o ./lib/temiga.js --standalone Temiga -v",
+    "watch-test": "watchify test/index.js -o ./test/test.js",
+    "build-test": "browserify test/index.js | uglifyjs -c > ./test/test.js",
+    "lint": "eslint src/.",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "browserify": {
+    "transform": [
+      "babelify"
+    ]
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.0",
+    "babel-eslint": "7",
+    "babel-plugin-transform-pipeline": "^0.1.0",
+    "babel-preset-env": "^1.6.1",
+    "babelify": "^8.0.0",
+    "browserify": "^14.5.0",
+    "document-register-element": "^1.7.0",
+    "eslint": "3.x",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-node": "^5.2.1",
+    "eslint-plugin-promise": "^3.6.0",
+    "eslint-plugin-standard": "^3.0.1",
+    "uglify-js": "^3.1.6",
+    "watchify": "^3.9.0"
+  },
+  "dependencies": {
+    "uuid": "^3.1.0"
+  }
+}
