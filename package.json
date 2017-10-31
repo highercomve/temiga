@@ -10,11 +10,11 @@
     "lib"
   ],
   "scripts": {
-    "build": "babel src -d lib",
-    "watch": "babel -w src -d lib",
-    "prebuild-browser": "npm run build",
-    "build-browser": "browserify src/index.js --standalone Temiga | uglifyjs -c > ./lib/temiga.min.js",
-    "watch-browser": "watchify src/index.js -o ./lib/temiga.js --standalone Temiga -v",
+    "build-babel": "babel src -d lib",
+    "watch-babel": "babel -w src -d lib",
+    "prebuild": "npm run build-babel",
+    "build": "browserify src/index.js --standalone Temiga | uglifyjs -c > ./lib/temiga.min.js",
+    "watch": "watchify src/index.js -o ./lib/temiga.js --standalone Temiga -v",
     "watch-test": "watchify test/index.js -o ./test/test.js",
     "build-test": "browserify test/index.js | uglifyjs -c > ./test/test.js",
     "lint": "eslint src/.",

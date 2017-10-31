@@ -40,6 +40,23 @@ function setEventListener (type, selector, cb) {
   })
 }
 
+function clone (obj, list = [], include = true) {
+  return Object.keys(obj).reduce((result, key) => {
+    if (list.includes(key) === include) {
+      result[key] = obj[key]
+    }
+    return result
+  }, {})
+}
+
+function update () {
+  if (this.shouldUpdate) {
+    return this.render.apply(this, arguments)
+  } else {
+    return this.innerHTML
+  }
+}
+
 export function CreateElement (builder = isRequired('You need to pass and object')) {
   validate(builder, ['name'])
 
@@ -65,20 +82,31 @@ export function CreateTag (options = {}) {
   const onMounted = options.onMounted || logThis('onMounted')
   const onUnmounted = options.onUnmounted || logThis('onUnmounted')
   const onChange = options.onChange || logThis('onChange')
+  const shouldUpdate = options.shouldUpdate || function () { return true }
   const newOptions = {
-    createdCallback: {value: onCreated},
-    attachedCallback: {value: onMounted},
+    createdCallback: {value: function () {
+      var div = document.createElement('div')
+      this.appendChild(div)
+      onCreated.call(this)
+    }},
+    attachedCallback: {value: function () { this.innerHTML = this.render(); onMounted.call(this) }},
     detachedCallback: {value: onUnmounted},
     attributeChangedCallback: {value: onChange}
   }
+  const base = Object.create(HTMLElement.prototype, newOptions)
+
+  const elemMethods = clone(options, ['name', 'onCreated', 'onMounted', 'onUnmounted', 'onChange', 'events'], false)
+
+  Object.assign(base, elemMethods, {update, shouldUpdate})
 
   if (options.props) {
     newOptions.props = options.props
   }
+
   return document.registerElement(
     options.name,
     {
-      prototype: Object.create(HTMLElement.prototype, newOptions)
+      prototype: base
     }
   )
 }

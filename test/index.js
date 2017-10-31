@@ -3,8 +3,8 @@ import store from './store/index'
 
 var TodoApp = Temiga.CreateElement({
   name: 'todo-app',
-  onMounted () {
-    this.innerHTML = `
+  render () {
+    return `
       <h1>Mi super dopper todo</h1>
       <todo-form></todo-form>
       <todo-list text="first todo">
@@ -16,26 +16,28 @@ var TodoApp = Temiga.CreateElement({
 var TodoList = Temiga.CreateElement({
   name: 'todo-list',
   onMounted () {
-    const notFound = `<h3>Create a new Todo</h3>`
     store.subscribe(() => {
-      const tareas = store.getState().todos || []
-      const tareasHTML = tareas.reduce((acc, tarea) => {
-        acc += `
-          <todo-item text="${tarea.text}" key="${tarea.id}" done="${tarea.done}">
-          </todo-item>
-        `
-        return acc
-      }, '').trim()
-      this.innerHTML = (tareasHTML === '') ? notFound : tareasHTML
+      const tareas = store.getState().todos
+      this.innerHTML = this.update(tareas)
     })
-    this.innerHTML = notFound
+  },
+  render (tareas = []) {
+    const notFound = `<h3>Create a new Todo</h3>`
+    const tareasHTML = tareas.reduce((acc, tarea) => {
+      acc += `
+        <todo-item text="${tarea.text}" key="${tarea.id}" done="${tarea.done}">
+        </todo-item>
+      `
+      return acc
+    }, '').trim()
+    return (tareasHTML === '') ? notFound : tareasHTML
   }
 })
 
 var TodoItem = Temiga.CreateElement({
   name: 'todo-item',
-  onMounted () {
-    this.innerHTML = `
+  render () {
+    return `
       <div class="item" id="${this.getAttribute('key')}">
         <input 
           type="checkbox" 
@@ -79,8 +81,8 @@ var TodoItem = Temiga.CreateElement({
 
 var TodoForm = Temiga.CreateElement({
   name: 'todo-form',
-  onMounted () {
-    this.innerHTML = `
+  render () {
+    return `
       <form>
         <input name="todo" id="add-todo" placeholder="Create a new todo">
         <button type="submit">Add new Task</button>

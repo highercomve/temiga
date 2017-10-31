@@ -7,6 +7,7 @@ _SpecRunner.html
 __benchmarks__
 remote-repo/
 coverage/
+lib/
 .module-cache
 *.log*
 chrome-user-data
