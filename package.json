@@ -1,6 +1,6 @@
 {
   "name": "temiga",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "This is a JS framework that only use plain JS and replace views with innerHTML",
   "main": "lib/index.js",
   "repository": "https://github.com/highercomve/temiga",
