@@ -296,9 +296,45 @@ function clone(obj) {
 
 function update() {
   if (this.shouldUpdate) {
-    return this.render.apply(this, arguments);
+    var newNode = document.createElement('div');
+    newNode.innerHTML = this.render.apply(this, arguments);
+    console.log(this.firstChild);
+    updateElement(this, this.firstChild, newNode);
   } else {
-    return this.innerHTML;
+    return this;
+  }
+}
+
+function areEqual(node1, node2) {
+  return node1.isEqualNode(node2);
+}
+
+function updateElement(parentNode, oldNode, newNode) {
+  var index = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
+
+  var newLength = newNode && newNode.children ? newNode.children.length : 0;
+  var oldLength = oldNode && oldNode.children ? oldNode.children.length : 0;
+  var elementsAreParent = newLength > 0 || oldLength > 0;
+
+  if (oldNode && newNode & areEqual(oldNode, newNode)) {
+    return;
+  }
+
+  parentNode = parentNode.nodeType === 3 ? parentNode.parentNode : parentNode;
+  if (!oldNode && newNode) {
+    parentNode.appendChild(newNode);
+  } else if (elementsAreParent) {
+    for (var i = 0; i < newLength || i < oldLength; i++) {
+      var parent = oldNode.parentNode || parentNode;
+      updateElement(parent.childNodes[index], oldNode.childNodes[i], newNode.childNodes[i], i);
+    }
+  } else if (oldNode && newNode) {
+    parentNode.replaceChild(newNode, oldNode);
+  } else if (!newNode) {
+    parentNode.removeChild(parentNode.childNodes[index]);
+  } else {
+    console.log(oldNode);
+    console.log(newNode);
   }
 }
 
@@ -341,13 +377,10 @@ function CreateTag() {
     return true;
   };
   var newOptions = {
-    createdCallback: { value: function value() {
-        var div = document.createElement('div');
-        this.appendChild(div);
-        onCreated.call(this);
-      } },
+    createdCallback: { value: onCreated },
     attachedCallback: { value: function value() {
-        this.innerHTML = this.render();onMounted.call(this);
+        this.update();
+        onMounted.call(this);
       } },
     detachedCallback: { value: onUnmounted },
     attributeChangedCallback: { value: onChange }
@@ -393,7 +426,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 var TodoApp = Temiga.CreateElement({
   name: 'todo-app',
   render: function render() {
-    return '\n      <h1>Mi super dopper todo</h1>\n      <todo-form></todo-form>\n      <todo-list text="first todo">\n      </todo-list>\n    ';
+    return '\n      <h1>Mi super dopper todo</h1>\n      <todo-form></todo-form>\n      <todo-list></todo-list>\n    ';
   }
 });
 
@@ -404,7 +437,7 @@ var TodoList = Temiga.CreateElement({
 
     _index3.default.subscribe(function () {
       var tareas = _index3.default.getState().todos;
-      _this.innerHTML = _this.update(tareas);
+      _this.update(tareas);
     });
   },
   render: function render() {

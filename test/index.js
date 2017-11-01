@@ -7,8 +7,7 @@ var TodoApp = Temiga.CreateElement({
     return `
       <h1>Mi super dopper todo</h1>
       <todo-form></todo-form>
-      <todo-list text="first todo">
-      </todo-list>
+      <todo-list></todo-list>
     `
   }
 })
@@ -18,7 +17,7 @@ var TodoList = Temiga.CreateElement({
   onMounted () {
     store.subscribe(() => {
       const tareas = store.getState().todos
-      this.innerHTML = this.update(tareas)
+      this.update(tareas)
     })
   },
   render (tareas = []) {

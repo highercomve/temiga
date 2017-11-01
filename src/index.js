@@ -49,12 +49,50 @@ function clone (obj, list = [], include = true) {
   }, {})
 }
 
-
 function update () {
   if (this.shouldUpdate) {
-    return this.render.apply(this, arguments)
+    const newNode = document.createElement('div')
+    newNode.innerHTML = this.render.apply(this, arguments)
+    console.log(this.firstChild)
+    updateElement(this, this.firstChild, newNode)
   } else {
-    return this.innerHTML
+    return this
+  }
+}
+
+function areEqual (node1, node2) {
+  return node1.isEqualNode(node2)
+}
+
+function updateElement (parentNode, oldNode, newNode, index = 0) {
+  const newLength = (newNode && newNode.children) ? newNode.children.length : 0
+  const oldLength = (oldNode && oldNode.children) ? oldNode.children.length : 0
+  const elementsAreParent = newLength > 0 || oldLength > 0
+
+  if (oldNode && newNode & areEqual(oldNode, newNode)) {
+    return
+  }
+
+  parentNode = (parentNode.nodeType === 3) ? parentNode.parentNode : parentNode
+  if (!oldNode && newNode) {
+    parentNode.appendChild(newNode)
+  } else if (elementsAreParent) {
+    for (let i = 0; i < newLength || i < oldLength; i++) {
+      const parent = oldNode.parentNode || parentNode
+      updateElement(
+        parent.childNodes[index],
+        oldNode.childNodes[i],
+        newNode.childNodes[i],
+        i
+      )
+    }
+  } else if (oldNode && newNode) {
+    parentNode.replaceChild(newNode, oldNode)
+  } else if (!newNode) {
+    parentNode.removeChild(parentNode.childNodes[index])
+  } else {
+    console.log(oldNode)
+    console.log(newNode)
   }
 }
 
@@ -87,12 +125,11 @@ export function CreateTag (options = {}) {
   const onChange = options.onChange || logThis('onChange')
   const shouldUpdate = options.shouldUpdate || function () { return true }
   const newOptions = {
-    createdCallback: {value: function () {
-      var div = document.createElement('div')
-      this.appendChild(div)
-      onCreated.call(this)
+    createdCallback: {value: onCreated},
+    attachedCallback: {value: function () {
+      this.update()
+      onMounted.call(this)
     }},
-    attachedCallback: {value: function () { this.innerHTML = this.render(); onMounted.call(this) }},
     detachedCallback: {value: onUnmounted},
     attributeChangedCallback: {value: onChange}
   }
