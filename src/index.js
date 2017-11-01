@@ -1,5 +1,8 @@
 import 'document-register-element'
 
+const TEXT_NODE = 3
+const NORMAL_NODE = 1 
+
 class TemigaError extends Error {
   constructor (message, code) {
     super(message)
@@ -52,9 +55,8 @@ function clone (obj, list = [], include = true) {
 function update () {
   if (this.shouldUpdate) {
     const newNode = document.createElement('div')
-    newNode.innerHTML = this.render.apply(this, arguments)
-    console.log(this.firstChild)
-    updateElement(this, this.firstChild, newNode)
+    newNode.innerHTML = this.render.apply(this, arguments).trim()
+    updateElement(this, this.firstChild, newNode.firstChild)
   } else {
     return this
   }
@@ -64,35 +66,61 @@ function areEqual (node1, node2) {
   return node1.isEqualNode(node2)
 }
 
+function cleanNode (node) {
+  const isEmpty = !node || (node.nodeType === TEXT_NODE && node.textContent.trim() === '')
+  return (isEmpty) ? null : node
+}
+
+function attributesAreEqual (attrA, attrB) {
+  if (attrA.length !== attrB.length) { return false }
+  return Object.keys(attrA).every((index) => {
+    return attrA[index].nodeValue === attrB[index].nodeValue && attrA[index].nodeName === attrB[index].nodeName
+  })
+}
+
+function isSameNode (nodeA, nodeB) {
+  const sameAttributes = attributesAreEqual(nodeA.attributes, nodeB.attributes)
+  const areComponents = typeof nodeA.render === 'function' && typeof nodeB.render === 'function'
+  const areTheSame = nodeA.nodeType === nodeB.nodeType &&
+         nodeA.tagName === nodeB.tagName &&
+         sameAttributes &&
+         nodeA.id === nodeB.id &&
+         areComponents &&
+         nodeA.render === nodeB.render
+
+  return areTheSame
+}
+
 function updateElement (parentNode, oldNode, newNode, index = 0) {
+  parentNode = (parentNode.nodeType === TEXT_NODE) ? parentNode.parentNode : parentNode
+  newNode = cleanNode(newNode)
+  oldNode = cleanNode(oldNode)
+
   const newLength = (newNode && newNode.children) ? newNode.children.length : 0
   const oldLength = (oldNode && oldNode.children) ? oldNode.children.length : 0
   const elementsAreParent = newLength > 0 || oldLength > 0
+  const sameNodes = (oldNode && newNode) ? isSameNode(oldNode, newNode) : false
 
-  if (oldNode && newNode & areEqual(oldNode, newNode)) {
+  if (sameNodes) {
     return
   }
 
-  parentNode = (parentNode.nodeType === 3) ? parentNode.parentNode : parentNode
   if (!oldNode && newNode) {
     parentNode.appendChild(newNode)
+  } else if (oldNode && newNode && !elementsAreParent) {
+    parentNode.replaceChild(newNode, oldNode)
+  } else if (!newNode) {
+    parentNode.removeChild(parentNode.children[index])
   } else if (elementsAreParent) {
     for (let i = 0; i < newLength || i < oldLength; i++) {
       const parent = oldNode.parentNode || parentNode
       updateElement(
-        parent.childNodes[index],
-        oldNode.childNodes[i],
-        newNode.childNodes[i],
+        parent.children[index],
+        oldNode.children[i],
+        newNode.children[i],
         i
       )
     }
-  } else if (oldNode && newNode) {
-    parentNode.replaceChild(newNode, oldNode)
-  } else if (!newNode) {
-    parentNode.removeChild(parentNode.childNodes[index])
-  } else {
-    console.log(oldNode)
-    console.log(newNode)
   }
 }
 
@@ -114,9 +142,7 @@ export function CreateElement (builder = isRequired('You need to pass and object
 export function CreateTag (options = {}) {
   const logThis = function (type) {
     return function () {
-      console.log(`call on ${type}`)
-      console.log(arguments)
-      console.log(this)
+      // console.log(`${type}`, this)
     }
   }
   const onCreated = options.onCreated || logThis('onCreated')

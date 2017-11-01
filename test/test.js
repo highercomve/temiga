@@ -229,6 +229,9 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+var TEXT_NODE = 3;
+var NORMAL_NODE = 1;
+
 var TemigaError = function (_Error) {
   _inherits(TemigaError, _Error);
 
@@ -297,9 +300,8 @@ function clone(obj) {
 function update() {
   if (this.shouldUpdate) {
     var newNode = document.createElement('div');
-    newNode.innerHTML = this.render.apply(this, arguments);
-    console.log(this.firstChild);
-    updateElement(this, this.firstChild, newNode);
+    newNode.innerHTML = this.render.apply(this, arguments).trim();
+    updateElement(this, this.firstChild, newNode.firstChild);
   } else {
     return this;
   }
@@ -309,32 +311,55 @@ function areEqual(node1, node2) {
   return node1.isEqualNode(node2);
 }
 
+function cleanNode(node) {
+  var isEmpty = !node || node.nodeType === TEXT_NODE && node.textContent.trim() === '';
+  return isEmpty ? null : node;
+}
+
+function attributesAreEqual(attrA, attrB) {
+  if (attrA.length !== attrB.length) {
+    return false;
+  }
+  return Object.keys(attrA).every(function (index) {
+    return attrA[index].nodeValue === attrB[index].nodeValue && attrA[index].nodeName === attrB[index].nodeName;
+  });
+}
+
+function isSameNode(nodeA, nodeB) {
+  var sameAttributes = attributesAreEqual(nodeA.attributes, nodeB.attributes);
+  var areComponents = typeof nodeA.render === 'function' && typeof nodeB.render === 'function';
+  var areTheSame = nodeA.nodeType === nodeB.nodeType && nodeA.tagName === nodeB.tagName && sameAttributes && nodeA.id === nodeB.id && areComponents && nodeA.render === nodeB.render;
+
+  return areTheSame;
+}
+
 function updateElement(parentNode, oldNode, newNode) {
   var index = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
+
+  parentNode = parentNode.nodeType === TEXT_NODE ? parentNode.parentNode : parentNode;
+  newNode = cleanNode(newNode);
+  oldNode = cleanNode(oldNode);
 
   var newLength = newNode && newNode.children ? newNode.children.length : 0;
   var oldLength = oldNode && oldNode.children ? oldNode.children.length : 0;
   var elementsAreParent = newLength > 0 || oldLength > 0;
+  var sameNodes = oldNode && newNode ? isSameNode(oldNode, newNode) : false;
 
-  if (oldNode && newNode & areEqual(oldNode, newNode)) {
+  if (sameNodes) {
     return;
   }
 
-  parentNode = parentNode.nodeType === 3 ? parentNode.parentNode : parentNode;
   if (!oldNode && newNode) {
     parentNode.appendChild(newNode);
+  } else if (oldNode && newNode && !elementsAreParent) {
+    parentNode.replaceChild(newNode, oldNode);
+  } else if (!newNode) {
+    parentNode.removeChild(parentNode.children[index]);
   } else if (elementsAreParent) {
     for (var i = 0; i < newLength || i < oldLength; i++) {
       var parent = oldNode.parentNode || parentNode;
-      updateElement(parent.childNodes[index], oldNode.childNodes[i], newNode.childNodes[i], i);
+      updateElement(parent.children[index], oldNode.children[i], newNode.children[i], i);
     }
-  } else if (oldNode && newNode) {
-    parentNode.replaceChild(newNode, oldNode);
-  } else if (!newNode) {
-    parentNode.removeChild(parentNode.childNodes[index]);
-  } else {
-    console.log(oldNode);
-    console.log(newNode);
   }
 }
 
@@ -364,9 +389,7 @@ function CreateTag() {
 
   var logThis = function logThis(type) {
     return function () {
-      console.log('call on ' + type);
-      console.log(arguments);
-      console.log(this);
+      // console.log(`${type}`, this)
     };
   };
   var onCreated = options.onCreated || logThis('onCreated');
@@ -426,7 +449,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 var TodoApp = Temiga.CreateElement({
   name: 'todo-app',
   render: function render() {
-    return '\n      <h1>Mi super dopper todo</h1>\n      <todo-form></todo-form>\n      <todo-list></todo-list>\n    ';
+    return '\n      <div>\n        <h1>Mi super dopper todo</h1>\n        <todo-form></todo-form>\n        <todo-list></todo-list>\n      </div>\n    ';
   }
 });
 
@@ -445,10 +468,11 @@ var TodoList = Temiga.CreateElement({
 
     var notFound = '<h3>Create a new Todo</h3>';
     var tareasHTML = tareas.reduce(function (acc, tarea) {
-      acc += '\n        <todo-item text="' + tarea.text + '" key="' + tarea.id + '" done="' + tarea.done + '">\n        </todo-item>\n      ';
+      acc += '\n        <todo-item id="' + tarea.id + '" text="' + tarea.text + '" key="' + tarea.id + '" done="' + tarea.done + '">\n        </todo-item>\n      ';
       return acc;
     }, '').trim();
-    return tareasHTML === '' ? notFound : tareasHTML;
+    var result = tareasHTML === '' ? notFound : tareasHTML;
+    return '<div>' + result + '</div>';
   }
 });
 
@@ -481,7 +505,7 @@ var TodoItem = Temiga.CreateElement({
 var TodoForm = Temiga.CreateElement({
   name: 'todo-form',
   render: function render() {
-    return '\n      <form id="new-todo">\n        <input name="todo" id="add-todo" placeholder="Create a new todo">\n        <button type="submit">Add new Task</button>\n      </form>\n    ';
+    return ' \n      <form id="new-todo">\n        <input name="todo" id="add-todo" placeholder="Create a new todo">\n        <button type="submit">Add new Task</button>\n      </form>\n    ';
   },
 
   events: {
