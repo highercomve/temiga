@@ -5,10 +5,11 @@ var TodoApp = Temiga.CreateElement({
   name: 'todo-app',
   render () {
     return `
-      <h1>Mi super dopper todo</h1>
-      <todo-form></todo-form>
-      <todo-list text="first todo">
-      </todo-list>
+      <div>
+        <h1>Mi super dopper todo</h1>
+        <todo-form></todo-form>
+        <todo-list></todo-list>
+      </div>
     `
   }
 })
@@ -18,19 +19,20 @@ var TodoList = Temiga.CreateElement({
   onMounted () {
     store.subscribe(() => {
       const tareas = store.getState().todos
-      this.innerHTML = this.update(tareas)
+      this.update(tareas)
     })
   },
   render (tareas = []) {
     const notFound = `<h3>Create a new Todo</h3>`
     const tareasHTML = tareas.reduce((acc, tarea) => {
       acc += `
-        <todo-item text="${tarea.text}" key="${tarea.id}" done="${tarea.done}">
+        <todo-item id="${tarea.id}" text="${tarea.text}" key="${tarea.id}" done="${tarea.done}">
         </todo-item>
       `
       return acc
     }, '').trim()
-    return (tareasHTML === '') ? notFound : tareasHTML
+    const result = (tareasHTML === '') ? notFound : tareasHTML
+    return `<div>${result}</div>`
   }
 })
 
@@ -74,7 +76,7 @@ var TodoItem = Temiga.CreateElement({
 var TodoForm = Temiga.CreateElement({
   name: 'todo-form',
   render () {
-    return `
+    return ` 
       <form id="new-todo">
         <input name="todo" id="add-todo" placeholder="Create a new todo">
         <button type="submit">Add new Task</button>
@@ -85,7 +87,7 @@ var TodoForm = Temiga.CreateElement({
     'submit #new-todo': function (evnt) {
       evnt.preventDefault()
       var value = event.target[0].value.trim()
-      if (value && value !==  '') {
+      if (value && value !== '') {
         store.dispatch({
           type: 'TASK_ADD',
           payload: {

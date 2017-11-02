@@ -1,4 +1,5 @@
 import 'document-register-element'
+import morph from 'nanomorph'
 
 class TemigaError extends Error {
   constructor (message, code) {
@@ -49,12 +50,20 @@ function clone (obj, list = [], include = true) {
   }, {})
 }
 
-
 function update () {
-  if (this.shouldUpdate) {
-    return this.render.apply(this, arguments)
-  } else {
-    return this.innerHTML
+  try {
+    if (this.shouldUpdate) {
+      const html = this.render.apply(this, arguments).trim()
+      const newNode = document.createElement('div')
+      newNode.innerHTML = html
+      if (!this.firstChild || (this.firstChild.nodeType === 3 && this.firstChild.textContent.trim() === '')) {
+        this.appendChild(newNode.firstChild)
+      } else {
+        morph(this.firstChild, newNode.firstChild)
+      }
+    }
+  } catch (e) {
+    console.log(e)
   }
 }
 
@@ -76,9 +85,9 @@ export function CreateElement (builder = isRequired('You need to pass and object
 export function CreateTag (options = {}) {
   const logThis = function (type) {
     return function () {
-      console.log(`call on ${type}`)
-      console.log(arguments)
-      console.log(this)
+      if (type === 'onChange') {
+        console.log(arguments)
+      }
     }
   }
   const onCreated = options.onCreated || logThis('onCreated')
@@ -87,12 +96,11 @@ export function CreateTag (options = {}) {
   const onChange = options.onChange || logThis('onChange')
   const shouldUpdate = options.shouldUpdate || function () { return true }
   const newOptions = {
-    createdCallback: {value: function () {
-      var div = document.createElement('div')
-      this.appendChild(div)
-      onCreated.call(this)
+    createdCallback: {value: onCreated},
+    attachedCallback: {value: function () {
+      this.update()
+      onMounted.call(this)
     }},
-    attachedCallback: {value: function () { this.innerHTML = this.render(); onMounted.call(this) }},
     detachedCallback: {value: onUnmounted},
     attributeChangedCallback: {value: onChange}
   }
